@@ -26,7 +26,7 @@
 ## 1. 동작 환경
 <p>
 
-- Ubuntu 20.04
+- Window 10 or Ubuntu
 - CUDA
 - Anaconda
 </p>
@@ -46,6 +46,8 @@ tf2-rar 저장소 clone
 
 git clone https://github.com/DrMaemi/tf2-rar.git
 cd tf2-rar
+pip install cython
+pip install "git+https://github.com/philferriere/cocoapi.git#egg=pycocotools&subdirectory=PythonAPI"
 pip install -r requirements.txt
 ```
 </p>
@@ -62,7 +64,6 @@ cd tf-pose-estimation
 ```
 ```bash
 sudo apt install swig
-pip install "git+https://github.com/philferriere/cocoapi.git#egg=pycocotools&subdirectory=PythonAPI"
 swig -python -c++ pafprocess.i && python setup.py build_ext --inplace
 ```
 </p>
