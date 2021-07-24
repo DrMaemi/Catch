@@ -142,12 +142,12 @@ def main():
 
     ava_predictor_worker = AVAPredictorWorker(args)
     pred_done_flag = False
-
+    images_by_id = dict()
     print("Showing tracking progress bar (in fps). Other processes are running in the background.")
     try:
         for i in tqdm(count(), desc="Tracker Progress", unit=" frame"):
             with torch.no_grad():
-                (orig_img, boxes, scores, ids) = ava_predictor_worker.read_track()
+                (frame, orig_img, boxes, scores, ids) = ava_predictor_worker.read_track()
 
                 if orig_img is None:
                     if not args.realtime:
@@ -160,6 +160,19 @@ def main():
                     if not flag:
                         break
                 else:
+                    # print("demo.py - get images_by_id")
+                    for bbox, id in zip(boxes, map(int, ids)):
+                        if id not in images_by_id:
+                            # images_by_id[id] = [frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]]
+                            images_by_id[id] = [frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]]
+                        else:
+                            # images_by_id[id].append(frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])])
+                            images_by_id[id].append(frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])])
+                    # for id in images_by_id.keys():
+                    #     print("id: {0}, type(images_by_id[{0}]): {1}".format(id, type(images_by_id[id])))
+                    #     last = len(images_by_id[id])-1
+                    #     print("len(images_by_id[{}]): {}".format(id, last+1))
+                    #     print("images_by_id[{}][{}].shape = {}".format(id, last, images_by_id[id][last].shape))
                     video_writer.send_track((boxes, ids))
                     while not pred_done_flag:
                         result = ava_predictor_worker.read()
