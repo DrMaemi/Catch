@@ -9,6 +9,7 @@ from itertools import count
 from tqdm import tqdm
 
 import torch
+from reid import REID
 
 from visualizer import AVAVisualizer
 from action_predictor import AVAPredictorWorker
@@ -119,6 +120,9 @@ def main():
     args.tracking = True
     args.detector = "tracker"
     args.debug = False
+
+    reid = REID()
+    print("ReID model loaded")
 
     if args.webcam:
         print('Starting webcam demo, press Ctrl + C to terminate...')
