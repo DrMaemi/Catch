@@ -262,10 +262,14 @@ class AVAVisualizer(object):
         has_frame = True
 
         result = self.result_queue.get()
+        print("visualizer.py - _write_frame()")
+        print("result = self.result_queue.get() = {}".format(result))
         timestamp = float('inf')
         result_ids = None
         if not isinstance(result, str):
             result, timestamp, result_ids = result
+        print("self.track_queue.qsize() = {}".format(self.track_queue.qsize()))
+        print("self.result_queue.qsize() = {}".format(self.result_queue.qsize()))
         while has_frame:
             track_result = self.track_queue.get()
 
@@ -393,6 +397,14 @@ class AVAVisualizer(object):
             draw.rectangle(box.tolist(), outline=self.box_color + (255,), width=self.box_width)
 
         for box, id in zip(bboxes, ids):
+            # x1, y1, x2, y2 = map(int, box.tolist())
+            # overlay = Image.new("RGBA", result_vis.size, (0, 0, 0, 0))
+            # trans_draw = ImageDraw.Draw(overlay)
+            # id_pos = (x1, y1)
+            # print("id_pos = {}".format(id_pos))
+            # print("int(id) = {}".format(int(id)))
+            # trans_draw.text(id_pos, int(id), fill=(255, 255, 255, self.category_trans), font=self.font, align="center")
+
             caption_and_color = self.action_dictionary.get(int(id), None)
 
             if caption_and_color is None:
@@ -427,7 +439,9 @@ class AVAVisualizer(object):
                 text_pos = (r_x1 + width_pad, r_y1 + height_pad)
 
                 trans_draw.rectangle(rec_pos, fill=self.category_colors[bg_colors[i]] + (self.category_trans,))
-                trans_draw.text(text_pos, caption, fill=(255, 255, 255, self.category_trans), font=self.font,
+                # print("type(text_pos[0]) = {}".format(type(text_pos[0])))
+                # print("type(caption) = {}".format(type(caption)))
+                trans_draw.text(text_pos, str(int(id))+" "+caption, fill=(255, 255, 255, self.category_trans), font=self.font,
                                 align="center")
 
             result_vis = Image.alpha_composite(result_vis, overlay)
