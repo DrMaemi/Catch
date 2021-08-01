@@ -98,13 +98,13 @@ def main():
     )
     parser.add_argument(
         "--tracker-box-thres",
-        default=0.3,
+        default=0.1,
         help="The box threshold for tracker",
         type=float,
     )
     parser.add_argument(
         "--tracker-nms-thres",
-        default=0.6,
+        default=0.4,
         help="The nms threshold for tracker",
         type=float,
     )
@@ -131,8 +131,11 @@ def main():
     else:
         print('Starting video demo, video path: {}'.format(args.video_path))
 
+    fuse_queue = torch.multiprocessing.Queue()
+
     # Initialise Visualizer
     video_writer = AVAVisualizer(
+        fuse_queue,
         args.input_path,
         args.output_path,
         args.realtime,
@@ -145,6 +148,7 @@ def main():
 
     torch.multiprocessing.set_start_method('forkserver', force=True)
     torch.multiprocessing.set_sharing_strategy('file_system')
+    
 
     ava_predictor_worker = AVAPredictorWorker(args)
     pred_done_flag = False
@@ -158,7 +162,6 @@ def main():
         for i in tqdm(count(), desc="Tracker Progress", unit=" frame"):
             with torch.no_grad():
                 (frame, orig_img, boxes, scores, ids) = ava_predictor_worker.read_track()
-                # print("type(frame) = {}".format(type(frame))) # <class 'numpy.ndarray'>
 
                 if orig_img is None:
                     if not args.realtime:
@@ -171,21 +174,14 @@ def main():
                     if not flag:
                         break
                 else:
-                    # print("demo.py - get images_by_id")
                     try:
                         ids_per_frame.append(set(map(int, ids)))
                         for bbox, id in zip(boxes, map(int, ids)):
                             if id not in images_by_id:
-                                # images_by_id[id] = [frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]]
                                 images_by_id[id] = [frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]]
                             else:
-                                # images_by_id[id].append(frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])])
                                 images_by_id[id].append(frame[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])])
-                        # for id in images_by_id.keys():
-                        #     print("id: {0}, type(images_by_id[{0}]): {1}".format(id, type(images_by_id[id])))
-                        #     last = len(images_by_id[id])-1
-                        #     print("len(images_by_id[{}]): {}".format(id, last+1))
-                        #     print("images_by_id[{}][{}].shape = {}".format(id, last, images_by_id[id][last].shape))
+
                     except TypeError:
                         pass
                     video_writer.send_track((boxes, ids))
@@ -200,23 +196,19 @@ def main():
     except KeyboardInterrupt:
         print("Keyboard Interrupted")
 
+    # 
     if not args.realtime:
-        threshold = 320
+        threshold = 500
         exist_ids = set()
         final_fuse_id = dict()
 
         print('Total IDs = ',len(images_by_id))
         feats = dict()
         for i in images_by_id:
-            # print('ID number {} -> Number of frames {}'.format(i, len(images_by_id[i])))
-            # print("type(images_by_id[{}] = {}".format(i, type(images_by_id[i])))
-            # print("type(images_by_id[{}][0] = {}".format(i, type(images_by_id[i][0])))
-            # print("type(images_by_id[{}]) = {}".format(i, type(images_by_id[i])))
-            # print("type(images_by_id[{}][0] = {}".format(i, type(images_by_id[i][0])))
             try:
                 feats[i] = reid._features(images_by_id[i])
-                # print("type(feats[i]) = {}".format(type(feats[i])))
-                # print("feats[i] = {}".format(feats[i]))
+                # set에 변동이 없도록 루프하는 .
+
             except ValueError:
                 pass
 
@@ -225,27 +217,26 @@ def main():
                 if len(exist_ids) == 0:
                     for i in f:
                         final_fuse_id[i] = [i]
-                    # print("type(exist_ids) = {}".format(type(exist_ids))) # set
-                    # print("exist_ids = {}".format(exist_ids)) # {1, 2, 3, 4}, ...?
-                    # print("type(f) = {}".format(type(f))) # set
-                    # print("f = {}".format(f)) # {1, 2} ...?
+
                     exist_ids = exist_ids or f
                 else:
                     new_ids = f-exist_ids
                     for nid in new_ids:
                         dis = []
-                        if len(images_by_id[nid])<10:
+                        if len(images_by_id[nid]) < 10:
                             exist_ids.add(nid)
                             continue
                         unpickable = []
-                        for i in f:
-                            for key,item in final_fuse_id.items():
+                        for i in f: # f = ids
+                            for key,item in final_fuse_id.items(): # {key: 병합된 id, value: 병합되기 전 id들 리스트}
                                 if i in item:
                                     unpickable += final_fuse_id[key]
-                        print('exist_ids {} unpickable {}'.format(exist_ids,unpickable))
+                        print('exist_ids {} unpickable {}'.format(exist_ids, unpickable))
                         for oid in (exist_ids-set(unpickable))&set(final_fuse_id.keys()):
                             try:
-                                tmp = np.mean(reid.compute_distance(feats[nid],feats[oid]))
+                                # feats[id] -> 2차원 배열
+                                # tmp = np.mean(reid.compute_distance(feats[nid], feats[oid]))
+                                tmp = np.min(reid.compute_distance(feats[nid], feats[oid]))
                                 print('nid {}, oid {}, tmp {}'.format(nid, oid, tmp))
                                 dis.append([oid, tmp])
                             except KeyError:
@@ -263,13 +254,14 @@ def main():
                             final_fuse_id[combined_id].append(nid)
                         else:
                             final_fuse_id[nid] = [nid]
-        # print("demo.py - main()")
-        # print("type(final_fuse_id) = {}".format(type(final_fuse_id)))
+
         print('Final ids and their sub-ids:', final_fuse_id)
         final_fuse_id_reverse = dict()
         for final_id, sub_ids in final_fuse_id.items():
             for sub_id in sub_ids:
                 final_fuse_id_reverse[sub_id] = final_id
+        # for passing 'final_fuse_id_reverse' to video_writer
+        fuse_queue.put(final_fuse_id_reverse)
         # print("final_fuse_id_reverse = {}".format(final_fuse_id_reverse))
 
         # print('MOT took {} seconds'.format(int(time.time() - t1)))
@@ -279,8 +271,7 @@ def main():
         print("demo.py - main()")
         while not pred_done_flag:
             result = ava_predictor_worker.read()
-            # print("type(result = ava_predictor_worker.read()) = {}".format(type(result)))
-            # print("ava_predictor_worker.output_queue.get_nowait(): (predictions, center_timestamp, ids): result = {}".format(result))
+
             if result is None:
                 sleep(0.1)
             elif result == "done":
@@ -288,10 +279,9 @@ def main():
             else:
                 for idx, id in enumerate(result[2]): # ids
                     id = int(id)
-                    # print("BEFORE: result[2][{}] = {}".format(idx, result[2][idx]))
                     if id in final_fuse_id_reverse:
                         result[2][idx] = final_fuse_id_reverse[id]
-                    # print("AFTER: result[2][{}] = {}".format(idx, result[2][idx]))
+                        
                 video_writer.send(result)
 
         video_writer.send("DONE")
