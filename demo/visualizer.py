@@ -147,6 +147,7 @@ class AVAVisualizer(object):
     ]
     def __init__(
             self,
+            fuse_queue,
             video_path,
             output_path,
             realtime,
@@ -169,6 +170,7 @@ class AVAVisualizer(object):
         self.duration = duration
         self.show_time =  show_time
         self.confidence_threshold = confidence_threshold
+        self.fuse_queue = fuse_queue
         if common_cate:
             self.cate_to_show = self.COMMON_CATES
             self.category_split = (6, 11)
@@ -192,6 +194,7 @@ class AVAVisualizer(object):
         self.category_trans = int(0.6 * 255)
 
         self.action_dictionary = dict()
+        self.final_fuse_id_reverse = None
 
         if realtime:
             # Output Video
@@ -252,6 +255,7 @@ class AVAVisualizer(object):
         # tqdm.write("load frame closed")
 
     def _wirte_frame(self, output_path):
+        final_fuse_id_reverse = self.fuse_queue.get()
         width = self.vid_info["width"]
         height = self.vid_info["height"]
         fps = self.vid_info["fps"]
@@ -262,14 +266,11 @@ class AVAVisualizer(object):
         has_frame = True
 
         result = self.result_queue.get()
-        print("visualizer.py - _write_frame()")
-        print("result = self.result_queue.get() = {}".format(result))
         timestamp = float('inf')
         result_ids = None
         if not isinstance(result, str):
             result, timestamp, result_ids = result
-        print("self.track_queue.qsize() = {}".format(self.track_queue.qsize()))
-        print("self.result_queue.qsize() = {}".format(self.result_queue.qsize()))
+
         while has_frame:
             track_result = self.track_queue.get()
 
@@ -290,6 +291,7 @@ class AVAVisualizer(object):
             if mills - timestamp + 0.5 > 0:
                 # print("renew action_dict:{}".format(self.action_dictionary))
                 boxes = result.bbox
+                # 행동 분류 시 각 행동에 대한 confidence. default 80개 class
                 scores = result.get_field("scores")
                 ids = result_ids
 
@@ -305,7 +307,7 @@ class AVAVisualizer(object):
 
             if boxes is not None:
                 self.update_action_dictionary(scores, ids)
-                last_visual_mask = self.visual_result(boxes, ids)
+                last_visual_mask = self.visual_result(boxes, ids, final_fuse_id_reverse)
                 new_frame = self.visual_frame(frame, last_visual_mask)
                 out_vid.write(new_frame)
             else:
@@ -364,9 +366,6 @@ class AVAVisualizer(object):
                 captions = []
                 bg_colors = []
 
-                #captions.append("id: {}".format(int(id)))
-                #bg_colors.append(0)
-
                 for category_id in show_idx:
                     if category_id in self.exclude_id:
                         continue
@@ -386,7 +385,7 @@ class AVAVisualizer(object):
                     "bg_colors": bg_colors,
                 }
 
-    def visual_result(self, boxes, ids):
+    def visual_result(self, boxes, ids, final_fuse_id_reverse):
         bboxes = boxes
         ids = ids
 
@@ -396,16 +395,9 @@ class AVAVisualizer(object):
         for box in bboxes:
             draw.rectangle(box.tolist(), outline=self.box_color + (255,), width=self.box_width)
 
-        for box, id in zip(bboxes, ids):
-            # x1, y1, x2, y2 = map(int, box.tolist())
-            # overlay = Image.new("RGBA", result_vis.size, (0, 0, 0, 0))
-            # trans_draw = ImageDraw.Draw(overlay)
-            # id_pos = (x1, y1)
-            # print("id_pos = {}".format(id_pos))
-            # print("int(id) = {}".format(int(id)))
-            # trans_draw.text(id_pos, int(id), fill=(255, 255, 255, self.category_trans), font=self.font, align="center")
-
-            caption_and_color = self.action_dictionary.get(int(id), None)
+        for box, id in zip(bboxes, map(int, ids)):
+            caption_and_color = self.action_dictionary.get(id, None)
+            id = final_fuse_id_reverse.get(id, id)
 
             if caption_and_color is None:
                 captions = []
@@ -439,9 +431,7 @@ class AVAVisualizer(object):
                 text_pos = (r_x1 + width_pad, r_y1 + height_pad)
 
                 trans_draw.rectangle(rec_pos, fill=self.category_colors[bg_colors[i]] + (self.category_trans,))
-                # print("type(text_pos[0]) = {}".format(type(text_pos[0])))
-                # print("type(caption) = {}".format(type(caption)))
-                trans_draw.text(text_pos, str(int(id))+" "+caption, fill=(255, 255, 255, self.category_trans), font=self.font,
+                trans_draw.text(text_pos, str(id)+" "+caption, fill=(255, 255, 255, self.category_trans), font=self.font,
                                 align="center")
 
             result_vis = Image.alpha_composite(result_vis, overlay)
