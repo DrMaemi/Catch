@@ -277,11 +277,6 @@ def main():
             elif result == "done":
                 pred_done_flag = True
             else:
-                for idx, id in enumerate(result[2]): # ids
-                    id = int(id)
-                    if id in final_fuse_id_reverse:
-                        result[2][idx] = final_fuse_id_reverse[id]
-                        
                 video_writer.send(result)
 
         video_writer.send("DONE")
