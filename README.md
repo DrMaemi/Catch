@@ -29,6 +29,14 @@ Catch는 대한민국 어린이집 99%에 이미 설치되어 있는 CCTV 인프
 
 <br>
 
+## 용어집
+
+용어 | 설명
+:--:|:--:
+[CatchNet](https://git.swmgit.org/swm-12/12_swm11/i-mind/-/tree/master/CatchNet) | 서비스 Catch에서 객체 탐지·얼굴 식별·추적·행동 인식 컴퓨터비전 기술을 이용해 어린이집 내 각각의 아이들을 개별적으로 관찰하기 위해 개발한 AI 파이프라인
+
+<br>
+
 ## 주요 기능
 <p>
 
