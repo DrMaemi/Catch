@@ -24,11 +24,60 @@
 ## Catch는 어떤 서비스인가요?
 <p>
 
-Catch는 대한민국 어린이집 99%에 이미 설치되어 있는 CCTV 인프라에 최신 트렌드인 AI 컴퓨터 비전 기술인 얼굴 식별, 객체 추적 및 행동 인식 기술을 활용하여 우리 아이의 몰랐던 모습을 확인할 수 있는 앱 플랫폼으로 다음과 같은 주요 기능 3가지를 제공합니다.
-1. 우리 아이 성장일지
-2. 우리 아이 어린이집 생활 기록부
-3. 스마트 알림장
+Catch는 대한민국 어린이집 99%에 이미 설치되어 있는 CCTV 인프라에 최신 트렌드의 AI 컴퓨터 비전 기술인 얼굴 식별, 객체 추적 및 행동 인식 기술을 활용하여 우리 아이의 몰랐던 모습을 확인할 수 있는 앱 플랫폼입니다.
 </p>
 
 <br>
 
+## 주요 기능
+<p>
+
+1. 우리 아이 성장일지
+2. 우리 아이 어린이집 생활 기록부
+3. 스마트 알림장
+<br>
+
+<table align='center'>
+  <tr>
+    <th colspan='2'><div align='center'>성장 일지</div></th>
+    <th colspan='2'><div align='center'>생활 기록부</div></th>
+  </tr>
+  <tr>
+    <td>
+      <div align="center">
+        <figure>
+            <img src="https://drive.google.com/uc?export=view&id=1nbLaVoRB_xtGr0GfsO4Bl4HyGAy1q1N8" alt="성장 일지 메인 1">
+            <div align="center"><figcation>성장 일지 메인 1</figcation></div>
+        </figure>
+      </div>
+    </td>
+    <td>
+      <div align="center">
+        <figure>
+            <img src="https://drive.google.com/uc?export=view&id=1l8xsihDekfLIngvajwV_1REDEdk5NrcW" alt="성장 일지 메인 2">
+            <div align="center"><figcation>성장 일지 메인 2</figcation></div>
+        </figure>
+      </div>
+    </td>
+    <td>
+      <div align="center">
+        <figure>
+            <img src="https://drive.google.com/uc?export=view&id=1prSDx-ywy3YVNs3RxrMnBwS-Drmcmm2_" alt="생활 기록부 1">
+            <div align="center"><figcation>생활 기록부 1</figcation></div>
+        </figure>
+      </div>
+    </td>
+    <td>
+      <div align="center">
+        <figure>
+            <img src="https://drive.google.com/uc?export=view&id=1KP60nEdZLzsOoY3FCvkQ5GNGjKJuP7rK" alt="생활 기록부 2">
+            <div align="center"><figcation>생활 기록부 2</figcation></div>
+        </figure>
+      </div>
+    </td>
+  </tr>
+</table>
+
+</p>
+
+<br>
