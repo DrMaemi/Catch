@@ -1,0 +1,3 @@
+[submodule "CatchNet"]
+	path = CatchNet
+	url = https://git.swmgit.org/swm-12/12_swm11/CatchNet
